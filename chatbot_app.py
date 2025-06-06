@@ -11,7 +11,7 @@ def play_sound(url):
     st.markdown(
         f"""
         <audio autoplay>
-            <source src="{url}" type="audio/ogg">
+            <source src="{url}" type="audio/mpeg">
         </audio>
         """,
         unsafe_allow_html=True,
