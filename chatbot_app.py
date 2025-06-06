@@ -11,13 +11,13 @@ def play_sound(url):
     st.markdown(
         f"""
         <audio autoplay>
-            <source src="{url}" type="audio/mpeg">
+            <source src="{url}" type="audio/ogg">
         </audio>
         """,
         unsafe_allow_html=True,
     )
 
-# ✅ 新问题列表
+# ✅ 题库：一个填空，一个选择题
 TOPIC_QUESTIONS = {
     "Hong Kong General": [
         {"question": "🔍 Q1: In Hong Kong, people usually drive on the __________ side of the road.", "answer": "left"},
@@ -30,7 +30,7 @@ TOPIC_QUESTIONS = {
         {"question": "🧩 Q1: In which year was CUHK’s MSc in Marketing program established?", "options": ["2001", "2008", "2011", "2018"], "answer": "2008"},
         {"question": "🧩 Q2: Which faculty hosts the MSc in Marketing program at CUHK?", "options": ["Faculty of Arts", "Faculty of Business Administration", "Faculty of Education", "Faculty of Law"], "answer": "Faculty of Business Administration"},
         {"question": "🧩 Q3: Which statement about the CUHK MSc in Marketing program is true?", "options": ["It is taught entirely in Cantonese.", " It accepts only applicants with a business undergraduate degree.", "It offers training in digital marketing and analytics.", "It does not allow international students."], "answer": "It offers training in digital marketing and analytics."},
-        {"question": "🧩 Q4: Which two tracks are typically offered in CUHK’s MSc in Marketing program?", "options": ["Big Data Marketing / Managerial Marketing ", "FinTech and Blockchain", "Public Health / Biotech Management", " Brand & Advertising / Customer Analytics"], "answer": "Brand & Advertising / Customer Analytics"},
+        {"question": "🧩 Q4: Which two tracks are typically offered in CUHK’s MSc in Marketing program?", "options": ["Big Data Marketing / Managerial Marketing", "FinTech and Blockchain", "Public Health / Biotech Management", "Brand & Advertising / Customer Analytics"], "answer": "Brand & Advertising / Customer Analytics"},
         {"question": "🧩 Q5: Who is the instructor of the “Machine Learning in Marketing” course in CUHK’s MSc in Marketing program?", "options": ["Professor Chenxi Liao", "Professor Francisco", "Professor Jingbo Wang", "Professor Stephen Hawking"], "answer": "Professor Jingbo Wang"},
     ]
 }
@@ -60,7 +60,7 @@ def restart():
     st.session_state.completed = False
     st.session_state.history = []
 
-# ✅ 标题和简介
+# ✅ 标题与游戏说明
 st.title("🎯 MKTers' Game Challenge")
 st.markdown("""
 **Welcome to the MKTers' Game!💡**
@@ -76,7 +76,7 @@ In this game, you'll choose from two tracks, each containing 5 carefully crafted
 **Good luck, and enjoy the challenge!❤️‍🔥**
 """)
 
-# ✅ 选择话题
+# ✅ 选择题目类别
 if not st.session_state.started:
     st.subheader("Select a topic to begin:")
     topic = st.radio("Choose your challenge topic:", list(TOPIC_QUESTIONS.keys()), key="topic_selector")
@@ -87,7 +87,7 @@ if not st.session_state.started:
         st.rerun()
     st.stop()
 
-# ✅ 显示答题历史
+# ✅ 展示历史对话
 for entry in st.session_state.history:
     st.chat_message("assistant").markdown(entry["question"])
     if entry.get("image"):
@@ -103,35 +103,56 @@ if not st.session_state.failed and not st.session_state.completed:
         st.markdown(q["question"])
         if q.get("image"):
             st.image(q["image"], caption="Reference Image", use_container_width=True)
-        if "options" in q:
-            st.markdown("Options: " + ", ".join(q["options"]))
 
-    user_input = st.chat_input("Your answer:")
-
-    if user_input:
-        st.session_state.history.append({
-            "question": q["question"],
-            "user_answer": user_input,
-            "image": q.get("image")
-        })
-
-        if user_input.strip() == q["answer"]:
-            play_sound(CORRECT_SOUND)
-            st.session_state.step += 1
-            if st.session_state.step >= len(st.session_state.questions):
-                st.session_state.completed = True
-                play_sound(SUCCESS_SOUND)
-                st.chat_message("assistant").success("🎉 Congratulations! You completed the challenge!")
-                st.chat_message("assistant").button("Restart", on_click=restart)
+    # 判断题型：选择题或填空题
+    if "options" in q:
+        selected_option = st.radio("Choose your answer:", q["options"], key=f"q_{curr}")
+        if st.button("Submit Answer", key=f"submit_{curr}"):
+            st.session_state.history.append({
+                "question": q["question"],
+                "user_answer": selected_option,
+                "image": q.get("image")
+            })
+            if selected_option == q["answer"]:
+                play_sound(CORRECT_SOUND)
+                st.session_state.step += 1
+                if st.session_state.step >= len(st.session_state.questions):
+                    st.session_state.completed = True
+                    play_sound(SUCCESS_SOUND)
+                    st.chat_message("assistant").success("🎉 Congratulations! You completed the challenge!")
+                    st.chat_message("assistant").button("Restart", on_click=restart)
+                else:
+                    st.rerun()
             else:
-                st.rerun()
-        else:
-            st.session_state.failed = True
-            play_sound(FAIL_SOUND)
-            st.chat_message("assistant").error("❌ Incorrect answer. Game over.")
-            st.chat_message("assistant").button("Restart", on_click=restart)
+                st.session_state.failed = True
+                play_sound(FAIL_SOUND)
+                st.chat_message("assistant").error("❌ Incorrect answer. Game over.")
+                st.chat_message("assistant").button("Restart", on_click=restart)
+    else:
+        user_input = st.chat_input("Your answer:")
+        if user_input:
+            st.session_state.history.append({
+                "question": q["question"],
+                "user_answer": user_input,
+                "image": q.get("image")
+            })
+            if user_input.strip() == q["answer"]:
+                play_sound(CORRECT_SOUND)
+                st.session_state.step += 1
+                if st.session_state.step >= len(st.session_state.questions):
+                    st.session_state.completed = True
+                    play_sound(SUCCESS_SOUND)
+                    st.chat_message("assistant").success("🎉 Congratulations! You completed the challenge!")
+                    st.chat_message("assistant").button("Restart", on_click=restart)
+                else:
+                    st.rerun()
+            else:
+                st.session_state.failed = True
+                play_sound(FAIL_SOUND)
+                st.chat_message("assistant").error("❌ Incorrect answer. Game over.")
+                st.chat_message("assistant").button("Restart", on_click=restart)
 
-# ✅ 已完成或失败后的重启选项
+# ✅ 如果结束，显示重启按钮
 elif st.session_state.failed or st.session_state.completed:
     if st.button("Restart"):
         restart()
