@@ -2,6 +2,18 @@ import streamlit as st
 
 st.set_page_config(page_title="Quiz Challenge", layout="centered")
 
+# ✅ 设置背景色
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: #f0f2f6;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # ✅ 音效链接
 SUCCESS_SOUND = "https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"
 FAIL_SOUND = "https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"
