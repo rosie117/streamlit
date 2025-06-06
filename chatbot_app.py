@@ -16,6 +16,7 @@ def play_sound(url):
         """,
         unsafe_allow_html=True,
     )
+    st.balloons()
 
 # ✅ 题库：一个填空，一个选择题
 TOPIC_QUESTIONS = {
