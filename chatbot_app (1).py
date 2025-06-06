@@ -6,8 +6,9 @@ st.set_page_config(page_title="Quiz Challenge", layout="centered")
 st.markdown(
     """
     <style>
-    body {
-        background-color: #f0f2f6;
+    [data-testid="stAppViewContainer"] {
+        background: linear-gradient(to bottom right, #d6ccf5, #b8a1e5, #9470d1);
+        background-attachment: fixed;
     }
     </style>
     """,
