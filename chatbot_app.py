@@ -85,6 +85,7 @@ if not st.session_state.started:
         st.session_state.topic = topic
         st.session_state.questions = TOPIC_QUESTIONS[topic]
         st.session_state.started = True
+        st.balloons() 
         st.rerun()
     st.stop()
 
