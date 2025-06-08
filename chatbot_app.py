@@ -1,23 +1,22 @@
 import streamlit as st
+import streamlit.components.v1 as components
+import base64
+import time
 
 st.set_page_config(page_title="Quiz Challenge", layout="centered")
 
-# ✅ 音效链接
-SUCCESS_SOUND = "https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"
-FAIL_SOUND = "https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"
-CORRECT_SOUND = "https://actions.google.com/sounds/v1/cartoon/concussive_drum_hit.ogg"
-
-def play_sound(url):
-    st.markdown(
-        f"""
+# ✅ 自动播放本地 mp3 音效
+def play_sound_local(filepath: str):
+    with open(filepath, "rb") as f:
+        audio_base64 = base64.b64encode(f.read()).decode()
+    audio_tag = f"""
         <audio autoplay>
-            <source src="{url}" type="audio/mpeg">
+            <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
         </audio>
-        """,
-        unsafe_allow_html=True,
-    )
+    """
+    components.html(audio_tag, height=0, width=0)
 
-# ✅ 题库：一个填空，一个选择题
+# ✅ 题库设置
 TOPIC_QUESTIONS = {
     "Hong Kong General": [
         {"question": "🔍 Q1: In Hong Kong, people usually drive on the __________ side of the road.", "answer": "left"},
@@ -60,7 +59,7 @@ def restart():
     st.session_state.completed = False
     st.session_state.history = []
 
-# ✅ 标题与游戏说明
+# ✅ 欢迎界面
 st.title("🎯 MKTers' Game Challenge")
 st.markdown("""
 **Welcome to the MKTers' Game!💡**
@@ -76,7 +75,7 @@ In this game, you'll choose from two tracks, each containing 5 carefully crafted
 **Good luck, and enjoy the challenge!❤️‍🔥**
 """)
 
-# ✅ 选择题目类别
+# ✅ 选择话题
 if not st.session_state.started:
     st.subheader("Select a topic to begin:")
     topic = st.radio("Choose your challenge topic:", list(TOPIC_QUESTIONS.keys()), key="topic_selector")
@@ -87,7 +86,7 @@ if not st.session_state.started:
         st.rerun()
     st.stop()
 
-# ✅ 展示历史对话
+# ✅ 展示历史记录
 for entry in st.session_state.history:
     st.chat_message("assistant").markdown(entry["question"])
     if entry.get("image"):
@@ -97,6 +96,12 @@ for entry in st.session_state.history:
 # ✅ 游戏进行中
 if not st.session_state.failed and not st.session_state.completed:
     curr = st.session_state.step
+
+    # ✅ 防止越界访问
+    if curr >= len(st.session_state.questions):
+        st.session_state.completed = True
+        st.rerun()
+
     q = st.session_state.questions[curr]
 
     with st.chat_message("assistant"):
@@ -104,7 +109,7 @@ if not st.session_state.failed and not st.session_state.completed:
         if q.get("image"):
             st.image(q["image"], caption="Reference Image", use_container_width=True)
 
-    # 判断题型：选择题或填空题
+    # 选择题
     if "options" in q:
         selected_option = st.radio("Choose your answer:", q["options"], key=f"q_{curr}")
         if st.button("Submit Answer", key=f"submit_{curr}"):
@@ -114,21 +119,17 @@ if not st.session_state.failed and not st.session_state.completed:
                 "image": q.get("image")
             })
             if selected_option == q["answer"]:
-                play_sound(CORRECT_SOUND)
+                play_sound_local("success.mp3")
+                time.sleep(0.8)
                 st.session_state.step += 1
-                if st.session_state.step >= len(st.session_state.questions):
-                    st.session_state.completed = True
-                    play_sound(SUCCESS_SOUND)
-                    st.chat_message("assistant").success("🎉 Congratulations! You completed the challenge!")
-                    st.chat_message("assistant").button("Restart", on_click=restart)
-                else:
-                    st.rerun()
+                st.rerun()
             else:
+                play_sound_local("fail.mp3")
                 st.session_state.failed = True
-                play_sound(FAIL_SOUND)
                 st.chat_message("assistant").error("❌ Incorrect answer. Game over.")
                 st.chat_message("assistant").button("Restart", on_click=restart)
     else:
+        # 填空题
         user_input = st.chat_input("Your answer:")
         if user_input:
             st.session_state.history.append({
@@ -137,22 +138,23 @@ if not st.session_state.failed and not st.session_state.completed:
                 "image": q.get("image")
             })
             if user_input.strip() == q["answer"]:
-                play_sound(CORRECT_SOUND)
+                play_sound_local("success.mp3")
+                time.sleep(0.8)
                 st.session_state.step += 1
-                if st.session_state.step >= len(st.session_state.questions):
-                    st.session_state.completed = True
-                    play_sound(SUCCESS_SOUND)
-                    st.chat_message("assistant").success("🎉 Congratulations! You completed the challenge!")
-                    st.chat_message("assistant").button("Restart", on_click=restart)
-                else:
-                    st.rerun()
+                st.rerun()
             else:
+                play_sound_local("fail.mp3")
                 st.session_state.failed = True
-                play_sound(FAIL_SOUND)
                 st.chat_message("assistant").error("❌ Incorrect answer. Game over.")
                 st.chat_message("assistant").button("Restart", on_click=restart)
 
-# ✅ 如果结束，显示重启按钮
-elif st.session_state.failed or st.session_state.completed:
-    if st.button("Restart"):
-        restart()
+# ✅ 通关或失败
+if st.session_state.completed:
+    play_sound_local("success-trumpets.mp3")
+    st.balloons()
+    st.chat_message("assistant").success("🎉 Congratulations! You completed the challenge!")
+    st.chat_message("assistant").button("Restart", on_click=restart)
+
+elif st.session_state.failed:
+    # 音效已播放，显示按钮
+    pass
